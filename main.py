@@ -1,3 +1,4 @@
+from nltk.sem.chat80 import borders
 from pymongo import MongoClient
 import pandas as pd
 import streamlit as st
@@ -308,7 +309,9 @@ def plot_map(data, selected_df):
                           marker=dict(size=10, color='orange'),
                           name='In Kigo',
                           hoverinfo='lat+lon+text',  # To display latitude, longitude, and additional info
-                          hovertext=selected_df.apply(lambda row: f"Vehicle: {row['vehicle_license']}<br>Status: {row['status']}", axis=1)
+                          hovertext=selected_df.apply(lambda row: f"Vehicle: "
+                                                                  f"{row['vehicle_license']}<br>Status: "
+                                                                  f"{row['status']}", axis=1)
                           )
 
     fig.update_layout(mapbox_style="open-street-map", dragmode='zoom')
@@ -339,3 +342,37 @@ fig = go.Figure(data=data, layout=layout)
 
 # Plotting
 st.plotly_chart(fig)
+
+# Full Arvoo
+full_vehicle_lectures = len(filtered_df)
+
+# Count distinct lectures ARVOO
+distinct_lectures = filtered_df['vehicle_license'].nunique()
+
+# Calculate the average confidence
+average_confidence = filtered_df['confidence'].mean()
+
+st.title("Metrics ARVOO")
+# Display metrics in 3 columns
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Full Vehicle-Lectures", full_vehicle_lectures)
+col2.metric("Distinct Lectures", distinct_lectures)
+col3.metric("Average Confidence", f"{average_confidence:.2f}")
+
+# Full Arvoo
+full_vehicle_lectures_kigo = len(selected_df)
+
+# Count distinct lectures ARVOO
+distinct_lectures_kigo = selected_df['vehicle_license'].nunique()
+
+# Calculate the average confidence
+average_confidence_kigo = selected_df['confidence'].mean()
+
+st.title("Metrics Kigo Coincidence")
+# Display metrics in 3 columns
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Full Vehicle-Lectures", full_vehicle_lectures_kigo)
+col2.metric("Distinct Lectures", distinct_lectures_kigo)
+col3.metric("Average Confidence", f"{average_confidence_kigo:.2f}")
