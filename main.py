@@ -18,6 +18,16 @@ import os
 
 st.set_page_config(layout="wide", page_title="Kigo Verification Beta", page_icon="decorations/kigo-icon-adaptative.png")
 
+st.markdown(
+    """
+    <div style="text-align: center;">
+        <img src="https://main.d1jmfkauesmhyk.amplifyapp.com/img/logos/logos.png" 
+        alt="Imagen al inicio" style="width: 25%; max-width: 30%; height: auto;">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 pem_key = st.secrets['pem']['private_key']
 
 # Configuration and Env of MongoDB
