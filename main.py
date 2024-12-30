@@ -207,7 +207,7 @@ def df_aurora_fetch(locatioon_selected, b, d):
             WHERE Z.name LIKE '%{location_selected}%'
             AND DATE(T.date) = '{d}'
             AND T.licenseplate IN ({b})
-            ORDER BY T.date DESC LIMIT 100;'''
+            ORDER BY T.date DESC;'''
 
     with SSHTunnelForwarder(
             (ssh_host, ssh_port),
