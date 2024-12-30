@@ -1,4 +1,3 @@
-from nltk.sem.chat80 import borders
 from pymongo import MongoClient
 import pandas as pd
 import streamlit as st
