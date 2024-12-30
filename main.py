@@ -181,13 +181,20 @@ st.write("Select a Date:", d)
 
 # Obtener y procesar datos de MongoDB
 mongo_df = get_mongo_data()
+
+
 if mongo_df is not None:
     mongo_df = process_mongo_dataframe(mongo_df)
+    mongo_df['date_lecture'] = mongo_df['timestamp'].dt.date
     print(mongo_df.head())
+    if d is not None:
+        filtered_df = mongo_df[mongo_df["date_lecture"] == d]
+    else:
+        st.write("No date selected.")
 else:
     print("No se obtuvieron datos de MongoDB.")
 
-b = ', '.join(f"'{value}'" for value in mongo_df['vehicle_license'].to_list())
+b = ', '.join(f"'{value}'" for value in filtered_df['vehicle_license'].to_list())
 
 location_selected = st.selectbox('Selecciona un Projecto:', locations)
 
