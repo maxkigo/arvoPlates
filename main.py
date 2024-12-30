@@ -302,7 +302,7 @@ def plot_map(data):
     st.plotly_chart(fig)
 
 # Use the plotting function
-plot_map_func = plot_map(get_mongo_data_processed())
+plot_map_func = plot_map(filtered_df)
 
 # Counting each status
 status_counts = selected_df['status'].value_counts()
