@@ -306,7 +306,10 @@ def plot_map(data, selected_df):
                           lon=selected_df['longitude'],
                           mode='markers',
                           marker=dict(size=10, color='orange'),
-                          name='In Kigo')
+                          name='In Kigo',
+                          hoverinfo='lat+lon+text',  # To display latitude, longitude, and additional info
+                          hovertext=selected_df.apply(lambda row: f"Vehicle: {row['vehicle_license']}<br>Status: {row['status']}", axis=1)
+                          )
 
     fig.update_layout(mapbox_style="open-street-map", dragmode='zoom')
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
