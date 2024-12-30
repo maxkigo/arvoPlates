@@ -308,7 +308,7 @@ def plot_map(data, selected_df):
                           marker=dict(size=10, color='orange'),
                           name='In Kigo')
 
-    fig.update_layout(mapbox_style="open-street-map")
+    fig.update_layout(mapbox_style="open-street-map", dragmode='zoom')
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
     st.plotly_chart(fig)
