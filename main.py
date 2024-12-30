@@ -285,7 +285,7 @@ st.data_editor(
 )
 
 # Creation and configuration of the map
-def plot_map(data):
+def plot_map(data, selected_df):
     fig = px.scatter_mapbox(data,
                             lat='latitude',  # refers to latitude column in the DataFrame
                             lon='longitude',  # refers to longitude column in the DataFrame
@@ -296,13 +296,21 @@ def plot_map(data):
                                         'vehicle_license': True},
                             zoom=10)
 
+    # Highlight points from selected_df in orange
+    fig.add_scattermapbox(lat=selected_df['latitude'],
+                          lon=selected_df['longitude'],
+                          mode='markers',
+                          marker=dict(size=10, color='orange'),
+                          name='In Kigo')
+
     fig.update_layout(mapbox_style="open-street-map")
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
     st.plotly_chart(fig)
 
+
 # Use the plotting function
-plot_map_func = plot_map(filtered_df)
+plot_map_func = plot_map(filtered_df, selected_df)
 
 # Counting each status
 status_counts = selected_df['status'].value_counts()
