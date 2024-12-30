@@ -15,6 +15,7 @@ from sshtunnel import SSHTunnelForwarder
 from os.path import expanduser
 import tempfile
 import os
+import datetime
 
 st.set_page_config(layout="wide", page_title="Kigo Verification Beta", page_icon="decorations/kigo-icon-adaptative.png")
 
@@ -188,8 +189,14 @@ locations = [
 ]
 
 #Selection of the date to fetch data
-d = st.date_input("Date Lectures", value=None)
-st.write("Select a Date:", d)
+# Create two columns: left and right
+col1, col2 = st.columns(2)
+
+with col1:
+    d = st.date_input("Date", value=datetime.date(2024, 12, 23))
+
+with col2:
+    location_selected = st.selectbox('Project:', locations, index=locations.index('Zacatlán') if 'Zacatlán' in locations else 0)
 
 
 # Access to MongoDb
@@ -208,8 +215,6 @@ else:
     print("No se obtuvieron datos de MongoDB.")
 
 b = ', '.join(f"'{value}'" for value in filtered_df['vehicle_license'].to_list())
-
-location_selected = st.selectbox('Selecciona un Projecto:', locations)
 
 # Auror Connection and fetching data
 @st.cache_data
