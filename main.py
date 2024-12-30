@@ -16,18 +16,18 @@ from os.path import expanduser
 import tempfile
 import os
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Kigo Verification Beta", page_icon="decorations/kigo-icon-adaptative.png")
 
 pem_key = st.secrets['pem']['private_key']
 
-# Configuración de MongoDB
+# Configuration and Env of MongoDB
 mongo_config = {
     "uri": st.secrets["mongo_credentials"]["uri"],
     "database": st.secrets["mongo_credentials"]["database"],
     "collection": st.secrets["mongo_credentials"]["collection"]
 }
 
-# Conexión a MongoDB
+# Connection to MongoDB
 def connect_to_mongo():
     try:
         client = MongoClient(mongo_config["uri"])
@@ -37,7 +37,7 @@ def connect_to_mongo():
         print(f"Error al conectar a MongoDB: {e}")
         return None
 
-# Obtener datos de MongoDB con la consulta agregada
+# Mongo data fecht
 def get_mongo_data():
     db = connect_to_mongo()
     if db is not None:  # Cambiar la verificación a comparación explícita con None
@@ -123,6 +123,7 @@ finally:
     # Clean up the temporary file after loading the private key
     os.remove(temp_key_file_path)
 
+# Env varibles for the creation of the ssh tunnel
 sql_hostname = st.secrets["database"]["sql_hostname"]
 sql_username = st.secrets["database"]["sql_username"]
 sql_password = st.secrets["database"]["sql_password"]
@@ -132,6 +133,7 @@ ssh_host = st.secrets["ssh"]["ssh_host"]
 ssh_user = st.secrets["ssh"]["ssh_user"]
 ssh_port = st.secrets["ssh"]["ssh_port"]
 
+# Locations of PV-Kigo
 locations = [
     "AHOME",
     "Chignahuapan",
@@ -175,14 +177,15 @@ locations = [
     "Zaragoza"
 ]
 
+#Selection of the date to fetch data
 d = st.date_input("Date Lectures", value=None)
 st.write("Select a Date:", d)
 
 
-# Obtener y procesar datos de MongoDB
+# Access to MongoDb
 mongo_df = get_mongo_data()
 
-
+# Mongo database filter to user only data from the selected date
 if mongo_df is not None:
     mongo_df = process_mongo_dataframe(mongo_df)
     mongo_df['date_lecture'] = mongo_df['timestamp'].dt.date
@@ -198,8 +201,9 @@ b = ', '.join(f"'{value}'" for value in filtered_df['vehicle_license'].to_list()
 
 location_selected = st.selectbox('Selecciona un Projecto:', locations)
 
+# Auror Connection and fetching data
 @st.cache_data
-def df_aurora_fetch(locatioon_selected, b, d):
+def df_aurora_fetch(location_selected, b, d):
     query = f'''SELECT T.paidminutes, T.date, T.expires, T.licenseplate, Z.name
             FROM CARGOMOVIL_PD.PKM_TRANSACTION T
             JOIN CARGOMOVIL_PD.PKM_PARKING_METER_ZONE_CAT Z
@@ -223,6 +227,7 @@ def df_aurora_fetch(locatioon_selected, b, d):
     return data_croce
 
 data_croce = df_aurora_fetch(location_selected, b, d)
+
 # Final Dataframe
 joined_df = pd.merge(mongo_df, data_croce, left_on='vehicle_license', right_on='licenseplate', how='inner')
 
@@ -242,11 +247,12 @@ selected_df['status'] = selected_df.apply(
     axis=1
 )
 
+# Convertion TimeZone from UTC to America/Mexico_City
 selected_df['validation_time'] = pd.to_datetime(selected_df['validation_time'], utc=True).dt.tz_convert('America/Mexico_City')
 selected_df['paymentdate'] = pd.to_datetime(selected_df['paymentdate'], utc=True).dt.tz_convert('America/Mexico_City')
 selected_df['expiretime'] = pd.to_datetime(selected_df['expiretime'], utc=True).dt.tz_convert('America/Mexico_City')
 
-
+#Column configuration to the construction of the final table
 column_configuration = {
     "vehicle_license": st.column_config.TextColumn(
         "License Plate", help="The license of the user", max_chars=100
@@ -254,11 +260,12 @@ column_configuration = {
     "date": st.column_config.TextColumn("Date"),
     "status": st.column_config.TextColumn("Status"),
     "expires": st.column_config.TextColumn("Expiration Date"),
-    "image0Url": st.column_config.ImageColumn("Image 1"),
+    "image0Url": st.column_config.ImageColumn("Image 1"), # Important that the ImageCoumn function only works with pd DF
     "image1Url": st.column_config.ImageColumn("Image 2"),
     "timestamp": st.column_config.TextColumn("Date Validation")
 }
 
+# Fetching of the final table with the correspont configurations
 st.data_editor(
     selected_df,
     column_config=column_configuration,
@@ -267,7 +274,7 @@ st.data_editor(
     num_rows="fixed"
 )
 
-
+# Creation and configuration of the map
 def plot_map(data):
     fig = px.scatter_mapbox(data,
                             lat='latitude',  # refers to latitude column in the DataFrame
@@ -283,7 +290,6 @@ def plot_map(data):
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
     st.plotly_chart(fig)
-
 
 # Use the plotting function
 plot_map_func = plot_map(get_mongo_data_processed())
