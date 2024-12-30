@@ -370,7 +370,7 @@ distinct_lectures_kigo = selected_df['vehicle_license'].nunique()
 average_confidence_kigo = selected_df['confidence'].mean()
 
 st.title("Metrics Kigo Coincidence")
-# Display metrics in 3 columns
+# Display metrics in 3 column
 col1, col2, col3 = st.columns(3)
 
 col1.metric("Full Vehicle-Lectures", full_vehicle_lectures_kigo)
