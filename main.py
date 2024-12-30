@@ -191,7 +191,9 @@ b = ', '.join(f"'{value}'" for value in mongo_df['vehicle_license'].to_list())
 
 location_selected = st.selectbox('Selecciona un Projecto:', locations)
 
-query = f'''SELECT T.paidminutes, T.date, T.expires, T.licenseplate, Z.name
+@st.cache_data
+def df_aurora_fetch(locatioon_selected, b, d):
+    query = f'''SELECT T.paidminutes, T.date, T.expires, T.licenseplate, Z.name
             FROM CARGOMOVIL_PD.PKM_TRANSACTION T
             JOIN CARGOMOVIL_PD.PKM_PARKING_METER_ZONE_CAT Z
             ON T.zoneid = Z.id
@@ -200,18 +202,20 @@ query = f'''SELECT T.paidminutes, T.date, T.expires, T.licenseplate, Z.name
             AND T.licenseplate IN ({b})
             ORDER BY T.date DESC LIMIT 100;'''
 
-with SSHTunnelForwarder(
-        (ssh_host, ssh_port),
-         ssh_username=ssh_user,
-         ssh_pkey=mypkey,
+    with SSHTunnelForwarder(
+            (ssh_host, ssh_port),
+             ssh_username=ssh_user,
+             ssh_pkey=mypkey,
          remote_bind_address=(sql_hostname, sql_port)) as tunnel:
-    conn = pymysql.connect(host='127.0.0.1', user=sql_username,
+        conn = pymysql.connect(host='127.0.0.1', user=sql_username,
                            passwd=sql_password, db=sql_main_database,
                            port=tunnel.local_bind_port)
-    queryf = query
-    data_croce = pd.read_sql_query(queryf, conn)
-    conn.close()
+        queryf = query
+        data_croce = pd.read_sql_query(queryf, conn)
+        conn.close()
+    return data_croce
 
+data_croce = df_aurora_fetch(location_selected, b, d)
 # Final Dataframe
 joined_df = pd.merge(mongo_df, data_croce, left_on='vehicle_license', right_on='licenseplate', how='inner')
 
