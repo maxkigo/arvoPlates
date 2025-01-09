@@ -218,12 +218,12 @@ b = ', '.join(f"'{value}'" for value in filtered_df['vehicle_license'].to_list()
 # Auror Connection and fetching data
 @st.cache_data
 def df_aurora_fetch(location_selected, b, d):
-    query = f'''SELECT T.paidminutes, CONVERT_TZ(T.date, 'America/Mexico_City', 'UTC') AS date, T.expires, T.licenseplate, Z.name
+    query = f'''SELECT T.paidminutes, CONVERT_TZ(T.date, 'UTC', 'America/Mexico_City') AS date, CONVERT_TZ(T.expires, 'UTC', 'America/Mexico_City') AS expires, T.licenseplate, Z.name
             FROM CARGOMOVIL_PD.PKM_TRANSACTION T
             JOIN CARGOMOVIL_PD.PKM_PARKING_METER_ZONE_CAT Z
             ON T.zoneid = Z.id
             WHERE Z.name LIKE '%{location_selected}%'
-            AND DATE(CONVERT_TZ(T.date, 'America/Mexico_City', 'UTC')) = '{d}'
+            AND DATE(CONVERT_TZ(T.date, 'UTC', 'America/Mexico_City')) = '{d}'
             AND T.licenseplate IN ({b})
             ORDER BY T.date DESC;'''
 
