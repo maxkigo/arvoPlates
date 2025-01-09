@@ -111,7 +111,6 @@ def process_mongo_dataframe(df):
         print("El DataFrame está vacío o no se generó correctamente.")
         return df
 
-
 arvoResponse = get_mongo_data()
 
 @st.cache_data
@@ -219,12 +218,12 @@ b = ', '.join(f"'{value}'" for value in filtered_df['vehicle_license'].to_list()
 # Auror Connection and fetching data
 @st.cache_data
 def df_aurora_fetch(location_selected, b, d):
-    query = f'''SELECT T.paidminutes, T.date, T.expires, T.licenseplate, Z.name
+    query = f'''SELECT T.paidminutes, CONVERT_TZ(T.date, 'America/Mexico_City', 'UTC') AS date, T.expires, T.licenseplate, Z.name
             FROM CARGOMOVIL_PD.PKM_TRANSACTION T
             JOIN CARGOMOVIL_PD.PKM_PARKING_METER_ZONE_CAT Z
             ON T.zoneid = Z.id
             WHERE Z.name LIKE '%{location_selected}%'
-            AND DATE(T.date) = '{d}'
+            AND DATE(CONVERT_TZ(T.date, 'America/Mexico_City', 'UTC')) = '{d}'
             AND T.licenseplate IN ({b})
             ORDER BY T.date DESC;'''
 
@@ -264,8 +263,6 @@ selected_df['status'] = selected_df.apply(
 
 # Convertion TimeZone from UTC to America/Mexico_City
 selected_df['validation_time'] = pd.to_datetime(selected_df['validation_time'], utc=True).dt.tz_convert('America/Mexico_City')
-selected_df['paymentdate'] = pd.to_datetime(selected_df['paymentdate'], utc=True).dt.tz_convert('America/Mexico_City')
-selected_df['expiretime'] = pd.to_datetime(selected_df['expiretime'], utc=True).dt.tz_convert('America/Mexico_City')
 
 #Column configuration to the construction of the final table
 column_configuration = {
