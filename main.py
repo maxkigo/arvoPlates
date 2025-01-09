@@ -253,6 +253,13 @@ selected_df.rename(columns={
     'expires': 'expiretime'
 }, inplace=True)
 
+# Convertion TimeZone from UTC to America/Mexico_City
+selected_df['validation_time'] = pd.to_datetime(selected_df['validation_time'], utc=True).dt.tz_convert('America/Mexico_City')
+# Ensure expiretime and paymentdate are also timezone-aware
+selected_df['expiretime'] = pd.to_datetime(selected_df['expiretime']).dt.tz_localize('America/Mexico_City')
+selected_df['paymentdate'] = pd.to_datetime(selected_df['paymentdate']).dt.tz_localize('America/Mexico_City')
+
+
 # Apply the condition and create a 'status' column
 selected_df['status'] = selected_df.apply(
     lambda row: 'Multable' if row['validation_time'] > row['expiretime'] else
@@ -261,8 +268,7 @@ selected_df['status'] = selected_df.apply(
     axis=1
 )
 
-# Convertion TimeZone from UTC to America/Mexico_City
-selected_df['validation_time'] = pd.to_datetime(selected_df['validation_time'], utc=True).dt.tz_convert('America/Mexico_City')
+
 
 #Column configuration to the construction of the final table
 column_configuration = {
