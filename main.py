@@ -1,3 +1,4 @@
+import pytz
 from pymongo import MongoClient
 import pandas as pd
 import streamlit as st
@@ -259,15 +260,51 @@ selected_df['validation_time'] = pd.to_datetime(selected_df['validation_time'], 
 selected_df['expiretime'] = pd.to_datetime(selected_df['expiretime']).dt.tz_localize('America/Mexico_City')
 selected_df['paymentdate'] = pd.to_datetime(selected_df['paymentdate']).dt.tz_localize('America/Mexico_City')
 
+# Calcular el tiempo restante (en minutos) por cada transacción basado en la fecha actual
+current_date = datetime.datetime.now()
+current_date = pd.to_datetime(current_date, utc=True).tz_convert('America/Mexico_City')
 
-# Apply the condition and create a 'status' column
-selected_df['status'] = selected_df.apply(
-    lambda row: 'Multable' if row['validation_time'] > row['expiretime'] else
-                'En Tiempo' if row['paymentdate'] <= row['validation_time'] <= row['expiretime'] else
-                'Pendiente de Validación',
-    axis=1
-)
+selected_df['remaining_time'] = (selected_df['expiretime'] - current_date).dt.total_seconds() / 60
 
+# Agrupar por 'vehicle_license' y 'date' para acumular tiempo restante
+selected_df['date'] = selected_df['paymentdate'].dt.date
+grouped_df = selected_df.groupby(['vehicle_license', 'date'], as_index=False).agg({
+    'remaining_time': 'sum',  # Sumar tiempo restante acumulado
+    'validation_time': 'max',  # Última validación del día
+    'paymentdate': 'max',  # Última fecha de pago
+    'expiretime': 'max',  # Última fecha de expiración
+    'confidence': 'mean',  # Promedio de confianza (si aplica)
+    'latitude': 'last',  # Última latitud
+    'longitude': 'last',  # Última longitud
+    'image0Url': 'last',  # Última URL de imagen
+    'image1Url': 'last'  # Última URL de imagen
+})
+
+# Renombrar las columnas para mayor claridad
+grouped_df.rename(columns={
+    'remaining_time': 'total_remaining_time',
+    'validation_time': 'last_validation_time'
+}, inplace=True)
+
+
+# Crear el nuevo status basado en las condiciones actualizadas
+def determine_status(row):
+    # Tiempo restante calculado en el momento de la última validación
+    remaining_at_validation = (row['expiretime'] - row['last_validation_time']).total_seconds() / 60
+
+    if remaining_at_validation <= 0:  # Si no queda tiempo restante en el momento de la validación
+        return 'Multable'
+    elif row['total_remaining_time'] > 0:  # Si queda tiempo restante acumulado
+        return 'En Tiempo'
+    else:
+        return 'Expirado'
+
+
+# Aplicar la función para determinar el status
+grouped_df['status'] = grouped_df.apply(determine_status, axis=1)
+
+# Convertir 'total_remaining_time' a un formato más legible (ej. horas y minutos)
+grouped_df['total_remaining_time'] = grouped_df['total_remaining_time'].apply(lambda x: f"{int(x // 60)}h {int(x % 60)}m" if x > 0 else "0h 0m")
 
 
 #Column configuration to the construction of the final table
@@ -275,7 +312,6 @@ column_configuration = {
     "vehicle_license": st.column_config.TextColumn(
         "License Plate", help="The license of the user", max_chars=100
     ),
-    "date": st.column_config.TextColumn("Date"),
     "status": st.column_config.TextColumn("Status"),
     "expires": st.column_config.TextColumn("Expiration Date"),
     "image0Url": st.column_config.ImageColumn("Image 1"), # Important that the ImageCoumn function only works with pd DF
@@ -285,7 +321,7 @@ column_configuration = {
 
 # Fetching of the final table with the correspont configurations
 st.data_editor(
-    selected_df,
+    grouped_df,
     column_config=column_configuration,
     use_container_width=True,
     hide_index=True,
@@ -323,10 +359,10 @@ def plot_map(data, selected_df):
 
 
 # Use the plotting function
-plot_map_func = plot_map(filtered_df, selected_df)
+plot_map_func = plot_map(filtered_df, grouped_df)
 
 # Counting each status
-status_counts = selected_df['status'].value_counts()
+status_counts = grouped_df['status'].value_counts()
 
 # Preparing data
 data = [
