@@ -328,6 +328,32 @@ st.data_editor(
     num_rows="fixed"
 )
 
+column_configuration_mr = {
+                    "timestamp": st.column_config.DatetimeColumn("Date Validation"),
+                    "latitude": st.column_config.NumberColumn("Latitude"),
+                    "longitude": st.column_config.NumberColumn("Longitude"),
+                    "vehicle_license": st.column_config.TextColumn("License Plate"),
+                    "confidence": st.column_config.NumberColumn("Confidence"),
+                    "image0Url": st.column_config.ImageColumn("Image 1"),
+                    "image1Url": st.column_config.ImageColumn("Image 2")
+}
+
+
+mongo_df['timestamp'] = pd.to_datetime(mongo_df['timestamp'], utc=True).dt.tz_convert('America/Mexico_City')
+
+arvoo_df = mongo_df[['timestamp', 'latitude', 'longitude', 'vehicle_license', 'confidence', 'image0Url', 'image1Url']].reset_index(drop=True).copy()
+arvoo_df = arvoo_df[arvoo_df['timestamp'].dt.date == d]
+
+print(arvoo_df.head())
+st.title("LPR Camera Data Lectures")
+st.data_editor(
+    arvoo_df,
+    column_config=column_configuration_mr,
+    use_container_width=True,
+    hide_index=True,
+    num_rows="fixed"
+)
+
 # Creation and configuration of the map
 def plot_map(data, selected_df):
     fig = px.scatter_mapbox(data,
@@ -414,3 +440,4 @@ col1, col2, col3 = st.columns(3)
 col1.metric("Full Vehicle-Lectures", full_vehicle_lectures_kigo)
 col2.metric("Distinct Lectures", distinct_lectures_kigo)
 col3.metric("Average Confidence", f"{average_confidence_kigo:.2f}")
+
